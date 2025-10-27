@@ -1,3 +1,4 @@
 .*
 train/
 test/
+tmp_model_checkpoints/
