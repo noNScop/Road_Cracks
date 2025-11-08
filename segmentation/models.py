@@ -1,4 +1,5 @@
 from torch import nn
+from torch.nn.functional import relu, sigmoid, tanh
 from torchvision.models.segmentation import (
     DeepLabV3_ResNet101_Weights,
     deeplabv3_mobilenet_v3_large,
@@ -45,6 +46,23 @@ class CrackSegmentationModelMN32(nn.Module):
 
     def name(self):
         return "deeplabv3_mobilenet_v3_large_crack"
+
+
+class CrackSegmentationModelCustom(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.conv1 = nn.Conv2d(3, 3, kernel_size=3, padding=1)
+        self.conv2 = nn.Conv2d(3, 2, kernel_size=3, padding=1)
+        self.conv3 = nn.Conv2d(2, 2, kernel_size=1)
+
+    def forward(self, x):
+        x = relu(self.conv1(x))
+        x = relu(self.conv2(x))
+        x = self.conv3(x)
+        return x
+
+    def name(self):
+        return "custom"
 
 
 CrackSegmentationModel = CrackSegmentationModelMN32
