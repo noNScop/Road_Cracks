@@ -6,6 +6,7 @@ from pathlib import Path
 import dataset
 import matplotlib.pyplot as plt
 import torch
+import torch.optim.lr_scheduler as lr_scheduler
 import typesum as ts
 from torch.nn.functional import softmax
 from torch.utils.data import DataLoader
@@ -32,12 +33,15 @@ def plot_losses(train_losses, test_losses):
 def train_loop(device, model, train_dataset, test_dataset):
     model = model.to(device)
 
-    BATCH_SIZE = 16
+    BATCH_SIZE = 4
 
     train_loader = DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=True)
     test_loader = DataLoader(test_dataset, batch_size=BATCH_SIZE, shuffle=False)
 
     optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)
+    scheduler = lr_scheduler.LinearLR(
+        optimizer, start_factor=1.0, end_factor=0.3, total_iters=10
+    )
 
     # lossfn - weighted cross entropy (high class imbalance)
     # weights computed by segmentation/class_stats.py
@@ -66,7 +70,7 @@ def train_loop(device, model, train_dataset, test_dataset):
             loss.backward()
             optimizer.step()
 
-            tq.set_postfix(loss=loss.item())
+            tq.set_postfix(loss=loss.item(), lr=optimizer.param_groups[0]["lr"])
             train_losses[0].append(iteration)
             train_losses[1].append(loss.item())
             iteration += 1
@@ -89,13 +93,20 @@ def train_loop(device, model, train_dataset, test_dataset):
         test_losses[0].append(iteration)
         test_losses[1].append(test_loss)
 
-        print(f"Epoch {epoch + 1}, Train Loss: {loss.item()}, Test Loss: {test_loss}")
+        print(
+            f"Epoch {epoch + 1}, Train Loss: {loss.item()}, Test Loss: {test_loss}",
+        )
 
         # save checkpoint
-        torch.save(
-            model.state_dict(),
-            f"models/{model.name()}_{model_id}_epoch{epoch + 1}.pth",
-        )
+        if epoch % 5 == 4:
+            if not Path("models").exists():
+                Path("models").mkdir()
+            torch.save(
+                model.state_dict(),
+                f"models/{model.name()}_{model_id}_epoch{epoch + 1}.pth",
+            )
+
+        scheduler.step()
 
         plot_losses(train_losses, test_losses)
 
@@ -108,8 +119,8 @@ def main():
     # take a subset of dataset for quick testing
     rng = random.Random(42)
     # mod 3 > 1 to avoid batch size 1 error
-    train_examples = rng.sample(dataset.list_examples(Path("train")), 200)
-    test_examples = rng.sample(dataset.list_examples(Path("test")), 40)
+    train_examples = rng.sample(dataset.list_examples(Path("train")), 500)
+    test_examples = rng.sample(dataset.list_examples(Path("test")), 80)
 
     print(f"{len(train_examples)=}, {len(test_examples)=}")
 

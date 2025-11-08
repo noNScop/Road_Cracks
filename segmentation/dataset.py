@@ -17,16 +17,18 @@ def maxpool_2x(arr):
 
 def load_image(path_jpg, convert):
     img = np.array(PIL.Image.open(path_jpg).convert(convert))
-    # scale down 2x, because images are too large for my GPU
-    if convert == "RGB":
-        img = np.array(
-            PIL.Image.fromarray(img).resize(
-                (img.shape[1] // 2, img.shape[0] // 2), PIL.Image.Resampling.BOX
+
+    if True:
+        # scale down 2x, because images are too large for my GPU
+        if convert == "RGB":
+            img = np.array(
+                PIL.Image.fromarray(img).resize(
+                    (img.shape[1] // 2, img.shape[0] // 2), PIL.Image.Resampling.BOX
+                )
             )
-        )
-    elif convert == "1":
-        # max pooling
-        img = maxpool_2x(img)
+        elif convert == "1":
+            # max pooling
+            img = maxpool_2x(img)
 
     return img
 

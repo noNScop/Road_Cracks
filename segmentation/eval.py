@@ -79,8 +79,10 @@ for i in range(20):
     pred_mask = inference(model, image)
     print(f"Example {i}: predicted mask shape: {pred_mask.shape}")
 
+
     # show image, predicted mask, true mask (side by side)
     plt.figure(figsize=(12, 4))
+    plt.suptitle(f"Example {test_dataset.paths[i]}")
     plt.subplot(1, 3, 1)
     plt.title("Input Image")
     plt.imshow(image.squeeze(0).permute(1, 2, 0).cpu().numpy())

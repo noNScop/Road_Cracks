@@ -1,3 +1,4 @@
+import unet
 from torch import nn
 from torch.nn.functional import relu, sigmoid, tanh
 from torchvision.models.segmentation import (
@@ -63,6 +64,18 @@ class CrackSegmentationModelCustom(nn.Module):
 
     def name(self):
         return "custom"
+
+
+class CrackSegmentationModelUNet(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.model = unet.UNet(n_channels=3, n_classes=2, bilinear=True)
+
+    def forward(self, x):
+        return self.model(x)
+
+    def name(self):
+        return "unet_crack"
 
 
 CrackSegmentationModel = CrackSegmentationModelMN32
