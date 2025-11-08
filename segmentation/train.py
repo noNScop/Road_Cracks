@@ -32,12 +32,12 @@ def plot_losses(train_losses, test_losses):
 def train_loop(device, model, train_dataset, test_dataset):
     model = model.to(device)
 
-    BATCH_SIZE = 3
+    BATCH_SIZE = 16
 
     train_loader = DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=True)
     test_loader = DataLoader(test_dataset, batch_size=BATCH_SIZE, shuffle=False)
 
-    optimizer = torch.optim.Adam(model.parameters(), lr=1e-5)
+    optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)
 
     # lossfn - weighted cross entropy (high class imbalance)
     # weights computed by segmentation/class_stats.py
@@ -108,8 +108,8 @@ def main():
     # take a subset of dataset for quick testing
     rng = random.Random(42)
     # mod 3 > 1 to avoid batch size 1 error
-    train_examples = rng.sample(dataset.list_examples(Path("train")), 101)
-    test_examples = rng.sample(dataset.list_examples(Path("test")), 20)
+    train_examples = rng.sample(dataset.list_examples(Path("train")), 200)
+    test_examples = rng.sample(dataset.list_examples(Path("test")), 40)
 
     print(f"{len(train_examples)=}, {len(test_examples)=}")
 

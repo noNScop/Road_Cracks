@@ -1,3 +1,4 @@
+import sys
 from pathlib import Path
 
 import dataset
@@ -23,7 +24,7 @@ model = models.CrackSegmentationModel().to(device)
 # load a trained model checkpoint
 model.load_state_dict(
     torch.load(
-        "models/deeplabv3_resnet50_crack_20251108_134602_epoch1.pth",
+        sys.argv[1],
         map_location=device,
     ),
 )
@@ -72,7 +73,7 @@ def evaluate_on_dataset(test_dataset):
 evaluate_on_dataset(test_dataset)
 
 # show some examples
-for i in range(5):
+for i in range(20):
     image, mask = test_dataset[i]
     image = image.unsqueeze(0).to(device)  # add batch dimension
     pred_mask = inference(model, image)
