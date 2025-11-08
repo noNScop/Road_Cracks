@@ -6,10 +6,28 @@ import torch
 from torch.utils.data import Dataset
 
 
+def maxpool_2x(arr):
+    return arr.reshape(
+        arr.shape[0] // 2,
+        2,
+        arr.shape[1] // 2,
+        2,
+    ).max(axis=(1, 3))
+
+
 def load_image(path_jpg, convert):
     img = np.array(PIL.Image.open(path_jpg).convert(convert))
     # scale down 2x, because images are too large for my GPU
-    img = img[::2, ::2]
+    if convert == "RGB":
+        img = np.array(
+            PIL.Image.fromarray(img).resize(
+                (img.shape[1] // 2, img.shape[0] // 2), PIL.Image.Resampling.BOX
+            )
+        )
+    elif convert == "1":
+        # max pooling
+        img = maxpool_2x(img)
+
     return img
 
 

@@ -22,7 +22,10 @@ model = models.CrackSegmentationModel().to(device)
 
 # load a trained model checkpoint
 model.load_state_dict(
-    torch.load("models/deeplabv3_resnet101_crack_epoch5.pth", map_location=device),
+    torch.load(
+        "models/deeplabv3_resnet50_crack_20251108_134602_epoch1.pth",
+        map_location=device,
+    ),
 )
 model.eval()
 
@@ -30,38 +33,43 @@ model.eval()
 test_examples = dataset.list_examples(Path("test"))[:200]
 test_dataset = dataset.CrackSegmentationDataset(test_examples)
 
-# eval iou
-total_iou = 0.0
-tp = 0  # true positives
-fp = 0  # false positives
-tn = 0  # true negatives
-fn = 0  # false negatives
-for i in tqdm(range(len(test_dataset)), desc="evaluation..."):
-    image, mask = test_dataset[i]
-    image = image.unsqueeze(0).to(device)  # add batch dimension
-    pred_mask = inference(model, image)  # (1,W,H)
-    true_mask = torch.argmax(mask, dim=0).unsqueeze(0).to(device)  # (1,W,H)
 
-    intersection = (pred_mask & true_mask).float().sum((1, 2))
-    union = (pred_mask | true_mask).float().sum((1, 2))
-    iou = (intersection + 1e-6) / (union + 1e-6)
-    total_iou += iou.item()
+def evaluate_on_dataset(test_dataset):
+    # eval iou
+    total_iou = 0.0
+    tp = 0  # true positives
+    fp = 0  # false positives
+    tn = 0  # true negatives
+    fn = 0  # false negatives
+    for i in tqdm(range(len(test_dataset)), desc="evaluation..."):
+        image, mask = test_dataset[i]
+        image = image.unsqueeze(0).to(device)  # add batch dimension
+        pred_mask = inference(model, image)  # (1,W,H)
+        true_mask = torch.argmax(mask, dim=0).unsqueeze(0).to(device)  # (1,W,H)
 
-    # compute tp, fp, tn, fn
-    tp += ((pred_mask == 1) & (true_mask == 1)).sum().item()
-    fp += ((pred_mask == 1) & (true_mask == 0)).sum().item()
-    tn += ((pred_mask == 0) & (true_mask == 0)).sum().item()
-    fn += ((pred_mask == 0) & (true_mask == 1)).sum().item()
+        intersection = (pred_mask & true_mask).float().sum((1, 2))
+        union = (pred_mask | true_mask).float().sum((1, 2))
+        iou = (intersection + 1e-6) / (union + 1e-6)
+        total_iou += iou.item()
 
-avg_iou = total_iou / len(test_dataset)
-precision = tp / (tp + fp + 1e-6)
-recall = tp / (tp + fn + 1e-6)
-fscore = 2 * (precision * recall) / (precision + recall + 1e-6)
-print(f"TP: {tp}, FP: {fp}, TN: {tn}, FN: {fn}")
-print(f"Average IoU: {avg_iou:.4f}")
-print(f"Precision: {precision:.4f}")
-print(f"Recall: {recall:.4f}")
-print(f"F-score: {fscore:.4f}")
+        # compute tp, fp, tn, fn
+        tp += ((pred_mask == 1) & (true_mask == 1)).sum().item()
+        fp += ((pred_mask == 1) & (true_mask == 0)).sum().item()
+        tn += ((pred_mask == 0) & (true_mask == 0)).sum().item()
+        fn += ((pred_mask == 0) & (true_mask == 1)).sum().item()
+
+    avg_iou = total_iou / len(test_dataset)
+    precision = tp / (tp + fp + 1e-6)
+    recall = tp / (tp + fn + 1e-6)
+    fscore = 2 * (precision * recall) / (precision + recall + 1e-6)
+    print(f"TP: {tp}, FP: {fp}, TN: {tn}, FN: {fn}")
+    print(f"Average IoU: {avg_iou:.4f}")
+    print(f"Precision: {precision:.4f}")
+    print(f"Recall: {recall:.4f}")
+    print(f"F-score: {fscore:.4f}")
+
+
+evaluate_on_dataset(test_dataset)
 
 # show some examples
 for i in range(5):
