@@ -57,7 +57,9 @@ class CrackSegmentationDataset(Dataset):
         mask = torch.tensor(load_image(mask_path, "1"))
         if self.transform:
             image = self.transform(image)
+            mask = mask.unsqueeze(0)  # add channel dim for transform
             mask = self.transform(mask)
+            mask = mask.squeeze(0)
         return image, self._mask_to_probs(mask)
 
 
