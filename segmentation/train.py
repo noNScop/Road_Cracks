@@ -7,7 +7,6 @@ import dataset
 import matplotlib.pyplot as plt
 import torch
 import torch.optim.lr_scheduler as lr_scheduler
-import typesum as ts
 from torch.nn.functional import softmax
 from torch.utils.data import DataLoader
 from tqdm import tqdm
@@ -98,13 +97,12 @@ def train_loop(device, model, train_dataset, test_dataset):
         )
 
         # save checkpoint
-        if epoch % 5 == 4:
-            if not Path("models").exists():
-                Path("models").mkdir()
-            torch.save(
-                model.state_dict(),
-                f"models/{model.name()}_{model_id}_epoch{epoch + 1}.pth",
-            )
+        if not Path("models").exists():
+            Path("models").mkdir()
+        torch.save(
+            model.state_dict(),
+            f"models/{model.name()}_{model_id}_last.pth",
+        )
 
         scheduler.step()
 
