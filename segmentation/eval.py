@@ -15,7 +15,8 @@ def inference(model, images):
     with torch.no_grad():
         outputs = model(images)
         probs = softmax(outputs, dim=1)
-        return torch.argmax(probs, dim=1)
+        # Return PROBABILITY (continuous) of 1
+        return probs[:, 1, :, :]
 
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -45,7 +46,8 @@ def evaluate_on_dataset(test_dataset):
     for i in tqdm(range(len(test_dataset)), desc="evaluation..."):
         image, mask = test_dataset[i]
         image = image.unsqueeze(0).to(device)  # add batch dimension
-        pred_mask = inference(model, image)  # (1,W,H)
+        pred = inference(model, image)  # (1,W,H)
+        pred_mask = (pred > 0.5).long()  # binary mask (1,W,H)
         true_mask = torch.argmax(mask, dim=0).unsqueeze(0).to(device)  # (1,W,H)
 
         intersection = (pred_mask & true_mask).float().sum((1, 2))
@@ -79,18 +81,20 @@ for i in range(20):
     pred_mask = inference(model, image)
     print(f"Example {i}: predicted mask shape: {pred_mask.shape}")
 
-
     # show image, predicted mask, true mask (side by side)
     plt.figure(figsize=(12, 4))
     plt.suptitle(f"Example {test_dataset.paths[i]}")
+
     plt.subplot(1, 3, 1)
     plt.title("Input Image")
     plt.imshow(image.squeeze(0).permute(1, 2, 0).cpu().numpy())
     plt.axis("off")
+
     plt.subplot(1, 3, 2)
     plt.title("Predicted Mask")
-    plt.imshow(pred_mask.squeeze(0).cpu().numpy(), cmap="gray")
+    plt.imshow(pred_mask.squeeze(0).cpu().numpy(), cmap="gray", vmin=0, vmax=1)
     plt.axis("off")
+
     plt.subplot(1, 3, 3)
     plt.title("True Mask")
     plt.imshow(torch.argmax(mask, dim=0).cpu().numpy(), cmap="gray")
