@@ -19,23 +19,6 @@ def inference(model, images):
         return probs[:, 1, :, :]
 
 
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-model = models.CrackSegmentationModel().to(device)
-
-# load a trained model checkpoint
-model.load_state_dict(
-    torch.load(
-        sys.argv[1],
-        map_location=device,
-    ),
-)
-model.eval()
-
-# take a subset of dataset for quick testing
-test_examples = dataset.list_examples(Path("test"))[:200]
-test_dataset = dataset.CrackSegmentationDataset(test_examples)
-
-
 def evaluate_on_dataset(test_dataset):
     # eval iou
     total_iou = 0.0
@@ -72,31 +55,52 @@ def evaluate_on_dataset(test_dataset):
     print(f"F-score: {fscore:.4f}")
 
 
-evaluate_on_dataset(test_dataset)
+def main():
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    model = models.CrackSegmentationModel().to(device)
 
-# show some examples
-for i in range(20):
-    image, mask = test_dataset[i]
-    image = image.unsqueeze(0).to(device)  # add batch dimension
-    pred_mask = inference(model, image)
-    print(f"Example {i}: predicted mask shape: {pred_mask.shape}")
+    # load a trained model checkpoint
+    model.load_state_dict(
+        torch.load(
+            sys.argv[1],
+            map_location=device,
+        ),
+    )
+    model.eval()
 
-    # show image, predicted mask, true mask (side by side)
-    plt.figure(figsize=(12, 4))
-    plt.suptitle(f"Example {test_dataset.paths[i]}")
+    # take a subset of dataset for quick testing
+    test_examples = dataset.list_examples(Path("test"))[:200]
+    test_dataset = dataset.CrackSegmentationDataset(test_examples)
 
-    plt.subplot(1, 3, 1)
-    plt.title("Input Image")
-    plt.imshow(image.squeeze(0).permute(1, 2, 0).cpu().numpy())
-    plt.axis("off")
+    evaluate_on_dataset(test_dataset)
 
-    plt.subplot(1, 3, 2)
-    plt.title("Predicted Mask")
-    plt.imshow(pred_mask.squeeze(0).cpu().numpy(), cmap="gray", vmin=0, vmax=1)
-    plt.axis("off")
+    # show some examples
+    for i in range(20):
+        image, mask = test_dataset[i]
+        image = image.unsqueeze(0).to(device)  # add batch dimension
+        pred_mask = inference(model, image)
+        print(f"Example {i}: predicted mask shape: {pred_mask.shape}")
 
-    plt.subplot(1, 3, 3)
-    plt.title("True Mask")
-    plt.imshow(torch.argmax(mask, dim=0).cpu().numpy(), cmap="gray")
-    plt.axis("off")
-    plt.show()
+        # show image, predicted mask, true mask (side by side)
+        plt.figure(figsize=(12, 4))
+        plt.suptitle(f"Example {test_dataset.paths[i]}")
+
+        plt.subplot(1, 3, 1)
+        plt.title("Input Image")
+        plt.imshow(image.squeeze(0).permute(1, 2, 0).cpu().numpy())
+        plt.axis("off")
+
+        plt.subplot(1, 3, 2)
+        plt.title("Predicted Mask")
+        plt.imshow(pred_mask.squeeze(0).cpu().numpy(), cmap="gray", vmin=0, vmax=1)
+        plt.axis("off")
+
+        plt.subplot(1, 3, 3)
+        plt.title("True Mask")
+        plt.imshow(torch.argmax(mask, dim=0).cpu().numpy(), cmap="gray")
+        plt.axis("off")
+        plt.show()
+
+
+if __name__ == "__main__":
+    main()
