@@ -9,6 +9,9 @@ from tqdm import tqdm
 
 import models
 
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+model = models.CrackSegmentationModelCustom().to(device)
+
 
 def inference(model, images):
     # returns a binary mask
@@ -56,9 +59,6 @@ def evaluate_on_dataset(test_dataset):
 
 
 def main():
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    model = models.CrackSegmentationModel().to(device)
-
     # load a trained model checkpoint
     model.load_state_dict(
         torch.load(
